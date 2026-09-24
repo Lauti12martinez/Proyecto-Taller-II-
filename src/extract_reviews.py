@@ -22,8 +22,8 @@ OUTPUT_FILE = Path("data/raw/amazon_reviews_raw.csv")
 
 def check_server_status():
     """
-    Verifica que el servidor esté despierto antes de iniciar la descarga.
-    Hace ping al endpoint /health hasta recibir un código 200 OK.
+    Verifica que el servidor este despierto antes de iniciar la descarga.
+    Hace ping al endpoint /health hasta recibir un codigo 200 OK.
     """
     print("Verificando disponibilidad del servidor en Render...")
 
@@ -42,7 +42,7 @@ def check_server_status():
 def extract_all_reviews():
     # Aseguramos que la carpeta data/raw exista en el disco
     OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
-    # Verificamos si el servidor está activo.
+    # Verificamos si el servidor esta activo.
     check_server_status()
 
     all_reviews = []
@@ -58,7 +58,7 @@ def extract_all_reviews():
             "offset": offset
         }
         try:
-            # Petición HTTP GET con parametros de consulta.
+            # Peticion HTTP GET con parametros de consulta.
             res = requests.get(REVIEWS_ENDPOINT, params=params, timeout=30)
 
             # Si el servidor responde con error temporal (ej. 500 o 503 por sobrecarga).
@@ -70,12 +70,12 @@ def extract_all_reviews():
             batch = payload.get("data", [])
             returned = payload.get("returned", len(batch))
 
-            # En la primera iteración inicializamos la barra de progreso con el total real.
+            # En la primera iteracion inicializamos la barra de progreso con el total real.
             if total_records is None:
                 total_records = payload.get("total_matching", 210001)
                 progress_bar = tqdm(total=total_records, desc="Descargando reseñas", unit="reviews")
 
-            # Condición de salida 1: La API no devuelve más registros.
+            # Condicion de salida 1: La API no devuelve mas registros.
             if not batch:
                 break
 
@@ -86,19 +86,19 @@ def extract_all_reviews():
             # Actualizamos el offset sumando los registros devueltos.
             offset += returned
 
-            # Condición de salida 2: Alcanzamos o superamos el total informado por la API.
+            # Condicion de salida 2: Alcanzamos o superamos el total informado por la API.
             if offset >= total_records:
                 break
 
-            # Pausa breve de 5ms para no saturar el socket de redes y evitar errores de conexión. 
+            # Pausa breve de 5ms para no saturar el socket de redes y evitar errores de conexion. 
             time.sleep(0.05)
 
-        # Captura cualquier error de conexión.
+        # Captura cualquier error de conexion.
         except requests.exceptions.RequestException as err:
-            # Muestra el fallo y espera 5 segundos antes de reintentar la misma petición.
+            # Muestra el fallo y espera 5 segundos antes de reintentar la misma peticion.
             print(f"\n[Fallo de red temporal] {err}. Reintentando offset {offset} en 5s...")
             time.sleep(5)
-    # Si la barra de progreso llegó al final, la cerramos para liberar la consola.      
+    # Si la barra de progreso llego al final, la cerramos para liberar la consola.      
     if progress_bar:
         progress_bar.close()
 
@@ -107,8 +107,8 @@ def extract_all_reviews():
 
 def main():
     """
-    Función de orquestación general del script:
-    Coordina la extracción, la carga a Pandas, el guardado en CSV y el análisis inicial.
+    Funcion de orquestacion general del script:
+    Coordina la extraccion, la carga a Pandas, el guardado en CSV y el analisis inicial.
     """
     reviews_data = extract_all_reviews()
 
@@ -134,6 +134,6 @@ def main():
         print("\nDistribución de etiquetas (label):")
         print(df["label"].value_counts().sort_index())
 
-# Condicional estándar de Python: asegura que main() solo se ejecute si corremos el script directamente.
+# Condicional estandar de Python: asegura que main() solo se ejecute si corremos el script directamente.
 if __name__ == "__main__":
     main()
