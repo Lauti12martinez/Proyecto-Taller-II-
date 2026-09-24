@@ -1,9 +1,16 @@
+# entornos virtuales y configuracion de editor.
 .venv/
+.env
+.vscode/
+
+# cache de python y notebooks.
 __pycache__/
 *.pyc
 .ipynb_checkpoints/
-data/raw/*.csv
+
+# archivos de datos pesados.
 *.csv
-.env
-.vscode/
-data/processed/
+*.parquet
+
+# permitir archivos gitkeep para conservar la estructura de directorios.
+!*.gitkeep
