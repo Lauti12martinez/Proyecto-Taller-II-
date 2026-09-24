@@ -6,3 +6,4 @@ data/raw/*.csv
 *.csv
 .env
 .vscode/
+data/processed/
