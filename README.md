@@ -70,7 +70,7 @@ poetry run python src/extract_reviews.py
 * **Resiliencia:** El script incluye control de *Cold Start* en Render, reintentos automáticos ante cortes de red y paginación masiva por lotes de 1.000 registros con barra de progreso interactiva (`tqdm`).
 
 > ⚠️ **Importante sobre el control de versiones (.gitignore):**  
-> El archivo `data/raw/amazon_reviews_raw.csv` supera los 100 MB y **no debe subirse a GitHub**. Ya está configurada la regla en el `.gitignore` para omitir `data/raw/*.csv` y `*.csv`. Cada integrante debe generar su copia local corriendo el script de extracción o solicitando el CSV por el almacenamiento compartido del grupo.
+> El archivo `data/raw/amazon_reviews_raw.csv` supera los 100 MB y **no debe subirse a GitHub**. Ya está configurada la regla en el `.gitignore` para omitir `*.csv`. Cada integrante debe generar su copia local corriendo el script de extracción o solicitando el CSV por el almacenamiento compartido del grupo.
 
 ---
 
