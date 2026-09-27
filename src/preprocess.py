@@ -5,13 +5,13 @@ import pandas as pd
 import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
 from tqdm import tqdm
-
-# Estructura general del script basada en el que arme para el 1er cuatri.
 
 # Descarga silenciosa de paquetes necesarios para que no falle en entornos limpios.
 nltk.download("punkt", quiet=True)
 nltk.download("stopwords", quiet=True)
+nltk.download("wordnet", quiet=True)  # Agregado para lematizar
 
 # Rutas del proyecto.
 RAW_PATH = Path("data/raw/amazon_reviews_raw.csv")
@@ -21,8 +21,9 @@ PROCESSED_PATH = Path("data/processed/amazon_reviews_clean.csv")
 CUSTOM_PUNCTUATION = string.punctuation + '¿¡“”‘’«»—–…！？：，（）'
 REMOVE_PUNCT_TABLE = str.maketrans("", "", CUSTOM_PUNCTUATION)
 
-# Lista de palabras vacias en ingles.
+# Lista de palabras vacias en ingles y Lematizador
 STOP_WORDS = set(stopwords.words("english"))
+LEMMATIZER = WordNetLemmatizer()
 
 
 def preprocess_text(text):
@@ -45,8 +46,12 @@ def preprocess_text(text):
     # Tokenizacion por palabras.
     tokens = word_tokenize(text)
 
-    # Filtrado de palabras vacias y tokens de longitud uno.
-    clean_tokens = [w for w in tokens if w not in STOP_WORDS and len(w) > 1]
+    # Filtrado de palabras vacias, tokens de longitud uno y Lematización (Raíz de la palabra)
+    clean_tokens = [
+        LEMMATIZER.lemmatize(w) 
+        for w in tokens 
+        if w not in STOP_WORDS and len(w) > 1
+    ]
 
     # Retorno del texto procesado en una sola cadena.
     return " ".join(clean_tokens)
