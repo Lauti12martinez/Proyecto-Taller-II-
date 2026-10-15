@@ -12,5 +12,14 @@ __pycache__/
 *.csv
 *.parquet
 
+# matrices vectorizadas, vectores pre-entrenados descargados y modelos serializados.
+*.npz
+*.npy
+*.joblib
+*.zip
+data/external/
+data/vectorized/
+models/*
+
 # permitir archivos gitkeep para conservar la estructura de directorios.
 !*.gitkeep
