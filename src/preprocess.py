@@ -10,6 +10,7 @@ from tqdm import tqdm
 
 # Descarga silenciosa de paquetes necesarios para que no falle en entornos limpios.
 nltk.download("punkt", quiet=True)
+nltk.download("punkt_tab", quiet=True)  # Requerido por word_tokenize en NLTK >= 3.9
 nltk.download("stopwords", quiet=True)
 nltk.download("wordnet", quiet=True)  # Agregado para lematizar
 
@@ -21,9 +22,26 @@ PROCESSED_PATH = Path("data/processed/amazon_reviews_clean.csv")
 CUSTOM_PUNCTUATION = string.punctuation + '¿¡“”‘’«»—–…！？：，（）'
 REMOVE_PUNCT_TABLE = str.maketrans("", "", CUSTOM_PUNCTUATION)
 
-# Lista de palabras vacias en ingles y Lematizador
-STOP_WORDS = set(stopwords.words("english"))
+# Negaciones que NO se descartan: invierten el sentimiento ("not good" != "good").
+NEGATION_WORDS = {"no", "not", "nor"}
+
+# Lista de palabras vacias en ingles (sin las negaciones) y Lematizador
+STOP_WORDS = set(stopwords.words("english")) - NEGATION_WORDS
 LEMMATIZER = WordNetLemmatizer()
+
+# Contracciones negativas que se expanden antes de quitar la puntuacion.
+# Ej: "don't" -> "do not", "can't" -> "can not", "won't" -> "will not".
+CONTRACTION_PATTERNS = [
+    (re.compile(r"\bwon['’]t\b"), "will not"),
+    (re.compile(r"\bcan['’]t\b"), "can not"),
+    (re.compile(r"n['’]t\b"), " not"),
+]
+
+
+def expand_negations(text):
+    for pattern, replacement in CONTRACTION_PATTERNS:
+        text = pattern.sub(replacement, text)
+    return text
 
 
 def preprocess_text(text):
@@ -39,6 +57,9 @@ def preprocess_text(text):
 
     # Eliminacion de digitos numericos.
     text = re.sub(r"\d+", " ", text)
+
+    # Expansion de contracciones negativas para no perder la negacion al quitar el apostrofo.
+    text = expand_negations(text)
 
     # Supresion de puntuacion mediante la tabla de caracteres.
     text = text.translate(REMOVE_PUNCT_TABLE)
