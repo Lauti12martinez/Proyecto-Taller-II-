@@ -23,7 +23,21 @@ CUSTOM_PUNCTUATION = string.punctuation + '¿¡“”‘’«»—–…！？�
 REMOVE_PUNCT_TABLE = str.maketrans("", "", CUSTOM_PUNCTUATION)
 
 # Negaciones que NO se descartan: invierten el sentimiento ("not good" != "good").
-NEGATION_WORDS = {"no", "not", "nor"}
+NEGATION_WORDS = {# palabras originales
+    "no", "not", "nor", "never", "cannot", "nothing", "neither", "none", "nobody", "don't",
+    
+    # Negaciones implícitas, restrictivas y adverbios
+    "without", "hardly", "barely", "scarcely", "seldom", "rarely", "nowhere", "noone", "lack", "lacking",
+    
+    # Contracciones con apóstrofe (incluidas en stopwords de NLTK)
+    "ain't", "aren't", "couldn't", "didn't", "doesn't", "hadn't", "hasn't", "haven't", 
+    "isn't", "mightn't", "mustn't", "needn't", "shan't", "shouldn't", "wasn't", "weren't", 
+    "won't", "wouldn't", "can't",
+    
+    # Contracciones sin apóstrofe contemplando errores de tipeo (muy comunes en reseñas de Amazon y presentes en NLTK)
+    "dont", "aint", "arent", "couldnt", "didnt", "doesnt", "hadnt", "hasnt", "havent", 
+    "isnt", "mightnt", "mustnt", "neednt", "shant", "shouldnt", "wasnt", "werent", 
+    "wont", "wouldnt", "cant"}
 
 # Lista de palabras vacias en ingles (sin las negaciones) y Lematizador
 STOP_WORDS = set(stopwords.words("english")) - NEGATION_WORDS
