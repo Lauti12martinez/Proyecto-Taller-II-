@@ -33,7 +33,8 @@ SPARSE_VECTORIZERS = {
 }
 
 # Vectores pre-entrenados GloVe (Stanford, Wikipedia + Gigaword, 400k palabras).
-GLOVE_URL = "https://nlp.stanford.edu/data/glove.6B.zip"
+# Se descarga directo el archivo de 100d desde un espejo en Hugging Face porque el servidor de Stanford suele dar timeout.
+GLOVE_URL = "https://huggingface.co/stanfordnlp/glove/resolve/main/glove.6B.zip"
 GLOVE_DIM = 100
 GLOVE_FILE = EXTERNAL_DIR / f"glove.6B.{GLOVE_DIM}d.txt"
 
@@ -93,17 +94,39 @@ def download_glove():
     EXTERNAL_DIR.mkdir(parents=True, exist_ok=True)
     zip_path = EXTERNAL_DIR / "glove.6B.zip"
 
-    # Descarga por partes con barra de progreso (el zip pesa ~820 MB).
-    print("Descargando vectores GloVe de Stanford (solo la primera vez)...")
-    with requests.get(GLOVE_URL, stream=True, timeout=60) as response:
-        response.raise_for_status()
-        total = int(response.headers.get("content-length", 0))
-        with open(zip_path, "wb") as file, tqdm(total=total, unit="B", unit_scale=True) as bar:
-            for chunk in response.iter_content(chunk_size=1 << 20):
-                file.write(chunk)
-                bar.update(len(chunk))
+    # Descarga con soporte de reanudacion automatica (Range HTTP) y reintentos ante microcortes.
+    print("Descargando vectores GloVe (reanudable si se corta la red)...")
+    while True:
+        downloaded = zip_path.stat().st_size if zip_path.exists() else 0
+        headers = {"Range": f"bytes={downloaded}-"} if downloaded > 0 else {}
 
-    # Del zip solo se extrae la dimension usada y se borra el resto para ahorrar espacio.
+        try:
+            with requests.get(GLOVE_URL, headers=headers, stream=True, timeout=60) as response:
+                # 416 significa que el archivo ya se habia terminado de descargar por completo.
+                if response.status_code == 416:
+                    break
+                response.raise_for_status()
+
+                # Si el servidor acepta Range (206), continuamos agregando ("ab"); si no, empezamos de cero ("wb").
+                mode = "ab" if response.status_code == 206 else "wb"
+                if mode == "wb":
+                    downloaded = 0
+
+                total = int(response.headers.get("content-length", 0)) + downloaded
+                with open(zip_path, mode) as file, tqdm(
+                    total=total, initial=downloaded, unit="B", unit_scale=True, desc="GloVe zip"
+                ) as bar:
+                    for chunk in response.iter_content(chunk_size=1 << 20):
+                        if chunk:
+                            file.write(chunk)
+                            bar.update(len(chunk))
+            break  # Salimos del bucle cuando la descarga llega al 100%.
+
+        except (requests.exceptions.RequestException, TimeoutError) as err:
+            print(f"\n[Aviso] Microcorte de red ({err}). Reanudando desde donde quedo...")
+
+    # Del zip solo se extrae la dimension usada (100d) y se borra el zip para ahorrar espacio.
+    print("Extrayendo glove.6B.100d.txt...")
     with zipfile.ZipFile(zip_path) as archive:
         archive.extract(GLOVE_FILE.name, EXTERNAL_DIR)
     zip_path.unlink()

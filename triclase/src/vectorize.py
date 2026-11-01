@@ -10,13 +10,14 @@ from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 from transformers import AutoTokenizer
 
-# Rutas del proyecto.
-PROCESSED_PATH = Path("data/processed/amazon_reviews_clean.csv")
-SPLIT_PATH = Path("data/processed/train_test_split.csv")
-VECTORIZED_DIR = Path("data/vectorized")
+# Rutas del proyecto para el experimento triclase.
+# EXTERNAL_DIR apunta a la raiz para compartir los vectores GloVe sin descargarlos dos veces.
+PROCESSED_PATH = Path("triclase/data/processed/amazon_reviews_clean.csv")
+SPLIT_PATH = Path("triclase/data/processed/train_test_split.csv")
+VECTORIZED_DIR = Path("triclase/data/vectorized")
 EXTERNAL_DIR = Path("data/external")
-MODELS_DIR = Path("models")
-REPORT_PATH = Path("reports/vectorization_summary.md")
+MODELS_DIR = Path("triclase/models")
+REPORT_PATH = Path("triclase/reports/vectorization_summary.md")
 
 # Particion train/test. Los vectorizadores se ajustan SOLO con train para no filtrar info del test.
 TEST_SIZE = 0.2
@@ -32,13 +33,16 @@ SPARSE_VECTORIZERS = {
     "tfidf_bigram": lambda: TfidfVectorizer(min_df=MIN_DF, ngram_range=(1, 2)),
 }
 
+
 # Vectores pre-entrenados GloVe (Stanford, Wikipedia + Gigaword, 400k palabras).
-GLOVE_URL = "https://nlp.stanford.edu/data/glove.6B.zip"
+# Se usa el espejo oficial en Hugging Face para evitar caidas y timeouts del servidor de Stanford.
+GLOVE_URL = "https://huggingface.co/stanfordnlp/glove/resolve/main/glove.6B.zip"
 GLOVE_DIM = 100
 GLOVE_FILE = EXTERNAL_DIR / f"glove.6B.{GLOVE_DIM}d.txt"
 
-# Modelo de Hugging Face pre-entrenado para sentimiento (se usa su tokenizador en esta etapa).
-HF_MODEL = "distilbert-base-uncased-finetuned-sst-2-english"
+# Modelo de Hugging Face pre-entrenado especificamente para 3 clases (0: Negativo, 1: Neutral, 2: Positivo).
+# En biclase se usaba SST-2 (estrictamente binario); este modelo RoBERTa incluye la clase neutral.
+HF_MODEL = "cardiffnlp/twitter-roberta-base-sentiment-latest"
 HF_MAX_LENGTH = 512
 
 
@@ -51,11 +55,11 @@ def load_dataset():
 
 
 def split_dataset(df):
-    # Particion estratificada para mantener la proporcion de clases en train y test.
+    # Particion estratificada para mantener la proporcion de las 3 clases (0, 1 y 2) en train y test.
     train_df, test_df = train_test_split(
         df, test_size=TEST_SIZE, stratify=df["sentiment"], random_state=RANDOM_STATE
     )
-    # Se guardan los ids de cada particion para que todos los modelos usen exactamente la misma.
+    # Se guardan los ids de cada particion para que todos los modelos triclase usen exactamente la misma.
     split = pd.concat([
         pd.DataFrame({"id": train_df["id"], "split": "train"}),
         pd.DataFrame({"id": test_df["id"], "split": "test"}),
@@ -93,17 +97,39 @@ def download_glove():
     EXTERNAL_DIR.mkdir(parents=True, exist_ok=True)
     zip_path = EXTERNAL_DIR / "glove.6B.zip"
 
-    # Descarga por partes con barra de progreso (el zip pesa ~820 MB).
-    print("Descargando vectores GloVe de Stanford (solo la primera vez)...")
-    with requests.get(GLOVE_URL, stream=True, timeout=60) as response:
-        response.raise_for_status()
-        total = int(response.headers.get("content-length", 0))
-        with open(zip_path, "wb") as file, tqdm(total=total, unit="B", unit_scale=True) as bar:
-            for chunk in response.iter_content(chunk_size=1 << 20):
-                file.write(chunk)
-                bar.update(len(chunk))
+    # Descarga con soporte de reanudacion automatica (Range HTTP) y reintentos ante microcortes.
+    print("Descargando vectores GloVe (reanudable si se corta la red)...")
+    while True:
+        downloaded = zip_path.stat().st_size if zip_path.exists() else 0
+        headers = {"Range": f"bytes={downloaded}-"} if downloaded > 0 else {}
 
-    # Del zip solo se extrae la dimension usada y se borra el resto para ahorrar espacio.
+        try:
+            with requests.get(GLOVE_URL, headers=headers, stream=True, timeout=60) as response:
+                # 416 significa que el archivo ya se habia terminado de descargar por completo.
+                if response.status_code == 416:
+                    break
+                response.raise_for_status()
+
+                # Si el servidor acepta Range (206), continuamos agregando ("ab"); si no, empezamos de cero ("wb").
+                mode = "ab" if response.status_code == 206 else "wb"
+                if mode == "wb":
+                    downloaded = 0
+
+                total = int(response.headers.get("content-length", 0)) + downloaded
+                with open(zip_path, mode) as file, tqdm(
+                    total=total, initial=downloaded, unit="B", unit_scale=True, desc="GloVe zip"
+                ) as bar:
+                    for chunk in response.iter_content(chunk_size=1 << 20):
+                        if chunk:
+                            file.write(chunk)
+                            bar.update(len(chunk))
+            break  # Salimos del bucle cuando la descarga llega al 100%.
+
+        except (requests.exceptions.RequestException, TimeoutError) as err:
+            print(f"\n[Aviso] Microcorte de red ({err}). Reanudando desde donde quedo...")
+
+    # Del zip solo se extrae la dimension usada (100d) y se borra el zip para ahorrar espacio.
+    print("Extrayendo glove.6B.100d.txt...")
     with zipfile.ZipFile(zip_path) as archive:
         archive.extract(GLOVE_FILE.name, EXTERNAL_DIR)
     zip_path.unlink()
@@ -141,7 +167,7 @@ def vectorize_glove(train_texts, test_texts):
     np.save(VECTORIZED_DIR / "X_train_glove.npy", x_train)
     np.save(VECTORIZED_DIR / "X_test_glove.npy", x_test)
 
-    # Cobertura: que parte del vocabulario del corpus (train) tiene vector pre-entrenado.
+    # Cobertura: que parte del vocabulario del corpus triclase (train) tiene vector pre-entrenado.
     corpus_vocab = {w for text in train_texts for w in text.split()}
     covered = sum(1 for w in corpus_vocab if w in word_index)
     empty_docs = int((~x_train.any(axis=1)).sum())
@@ -159,13 +185,13 @@ def vectorize_glove(train_texts, test_texts):
 
 
 def describe_hf_tokenizer(train_texts):
-    # El pipeline de HF trabaja con texto crudo: tiene su propio tokenizador (WordPiece) y vocabulario.
+    # El pipeline de HF trabaja con texto crudo: tiene su propio tokenizador y vocabulario.
     # En esta etapa solo se tokeniza para medir el vocabulario y cuanto texto se trunca;
-    # la inferencia con el modelo completo se hace en la etapa de evaluacion.
+    # la inferencia con el modelo de 3 clases completo se hace en la etapa de evaluacion.
     tokenizer = AutoTokenizer.from_pretrained(HF_MODEL)
     lengths = []
     batch_size = 1000
-    for start in tqdm(range(0, len(train_texts), batch_size), desc="Tokenizando (HF)"):
+    for start in tqdm(range(0, len(train_texts), batch_size), desc="Tokenizando (HF Triclase)"):
         batch = list(train_texts[start:start + batch_size])
         lengths.extend(len(ids) for ids in tokenizer(batch)["input_ids"])
     lengths = np.array(lengths)
@@ -185,9 +211,9 @@ def describe_hf_tokenizer(train_texts):
 def write_report(rows, n_train, n_test):
     REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
     lines = [
-        "# Resumen de vectorizacion",
+        "# Resumen de vectorizacion (Triclase)",
         "",
-        f"Generado por `src/vectorize.py`. Particion estratificada: {n_train:,} reseñas de train "
+        f"Generado por `triclase/src/vectorize.py`. Particion estratificada en 3 clases: {n_train:,} reseñas de train "
         f"y {n_test:,} de test (test_size={TEST_SIZE}, random_state={RANDOM_STATE}).",
         "",
         "| Representacion | Tamaño de vocabulario | Dimensiones | Train | Test | Notas |",
@@ -205,7 +231,7 @@ def main():
     VECTORIZED_DIR.mkdir(parents=True, exist_ok=True)
     MODELS_DIR.mkdir(parents=True, exist_ok=True)
 
-    print("Cargando dataset preprocesado...")
+    print("Cargando dataset preprocesado (Triclase)...")
     df = load_dataset()
     train_df, test_df = split_dataset(df)
     print(f"Train: {len(train_df):,} | Test: {len(test_df):,}")
@@ -218,13 +244,13 @@ def main():
     print("\nVectorizando con embeddings GloVe...")
     rows.append(vectorize_glove(train_df["cleaned_text"].tolist(), test_df["cleaned_text"].tolist()))
 
-    print("\nAnalizando tokenizador del pipeline de Hugging Face...")
+    print("\nAnalizando tokenizador del pipeline de Hugging Face (3 clases)...")
     rows.append(describe_hf_tokenizer(train_df["text"].tolist()))
 
     write_report(rows, len(train_df), len(test_df))
 
     print("\n" + "=" * 50)
-    print(">> VECTORIZACION COMPLETADA")
+    print(">> VECTORIZACION TRICLASE COMPLETADA")
     print("=" * 50)
     for row in rows:
         print(f"{row['representation']:<15} vocabulario: {row['vocabulary_size']:>9,}  dims: {row['dimensions']:>9,}")
