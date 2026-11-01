@@ -18,8 +18,8 @@ __pycache__/
 *.joblib
 *.zip
 data/external/
-data/vectorized/
-models/*
+**/data/vectorized/
+**/models/*
 
 # permitir archivos gitkeep para conservar la estructura de directorios.
 !*.gitkeep

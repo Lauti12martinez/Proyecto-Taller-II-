@@ -16,7 +16,7 @@ nltk.download("wordnet", quiet=True)  # Agregado para lematizar
 
 # Rutas del proyecto.
 RAW_PATH = Path("data/raw/amazon_reviews_raw.csv")
-PROCESSED_PATH = Path("data/processed/amazon_reviews_clean.csv")
+PROCESSED_PATH = Path("biclase/data/processed/amazon_reviews_clean.csv")
 
 # Tabla para remover signos de puntuacion extendidos.
 CUSTOM_PUNCTUATION = string.punctuation + '¿¡“”‘’«»—–…！？：，（）'
