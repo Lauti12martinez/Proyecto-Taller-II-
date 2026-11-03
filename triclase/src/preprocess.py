@@ -24,8 +24,24 @@ PROCESSED_PATH = Path("triclase/data/processed/amazon_reviews_clean.csv")
 CUSTOM_PUNCTUATION = string.punctuation + '¿¡“”‘’«»—–…！？：，（）'
 REMOVE_PUNCT_TABLE = str.maketrans("", "", CUSTOM_PUNCTUATION)
 
-# Negaciones que NO se descartan: invierten el sentimiento ("not good" != "good").
-NEGATION_WORDS = {"no", "not", "nor"}
+# negaciones que no se descartan para no perder polaridad ("not good" != "good").
+NEGATION_WORDS = {
+    # palabras cardinales de negacion.
+    "no", "not", "nor", "never", "cannot", "nothing", "neither", "none", "nobody", "don't",
+    
+    # negaciones implicitas restrictivas y adverbios de escasez.
+    "without", "hardly", "barely", "scarcely", "seldom", "rarely", "nowhere", "noone", "lack", "lacking",
+    
+    # contracciones estandar con apostrofe.
+    "ain't", "aren't", "couldn't", "didn't", "doesn't", "hadn't", "hasn't", "haven't",
+    "isn't", "mightn't", "mustn't", "needn't", "shan't", "shouldn't", "wasn't", "weren't",
+    "won't", "wouldn't", "can't",
+    
+    # variantes sin apostrofe comunes por tipeo rapido.
+    "dont", "aint", "arent", "couldnt", "didnt", "doesnt", "hadnt", "hasnt", "havent",
+    "isnt", "mightnt", "mustnt", "neednt", "shant", "shouldnt", "wasnt", "werent",
+    "wont", "wouldnt", "cant"
+}
 
 # Lista de palabras vacias en ingles (sin las negaciones) y Lematizador.
 STOP_WORDS = set(stopwords.words("english")) - NEGATION_WORDS
