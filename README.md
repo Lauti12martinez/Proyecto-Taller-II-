@@ -84,7 +84,7 @@ poetry install
 
 ## 📥 Ingesta de Datos (API de Amazon Reviews)
 
-El corpus crudo se descarga una única vez en la raíz del proyecto consultando la API provista por la cátedra (`[https://amazon-reviews-api-g5ae.onrender.com](https://amazon-reviews-api-g5ae.onrender.com)`):
+El corpus crudo se descarga una única vez en la raíz del proyecto consultando la API provista por la cátedra (`https://amazon-reviews-api-g5ae.onrender.com`):
 
 ```bash
 poetry run python src/extract_reviews.py
@@ -107,9 +107,9 @@ poetry run python src/extract_reviews.py
 
 Ambos pipelines leen el archivo compartido `data/raw/amazon_reviews_raw.csv` y aplican exactamente las mismas reglas de normalización léxica para garantizar una comparativa justa:
 
-* **Limpieza de `text` → `cleaned_text`:** minúsculas, sin HTML, sin dígitos, sin puntuación, tokenización (NLTK), sin stopwords ni tokens de una letra, lematización (WordNet).
-* **Negaciones:** No solo se conservan `not`, `no` y `nor`, sino un vocabulario exhaustivo de términos que invierten o restringen polaridad (*never*, *without*, *hardly*, *barely*, *rarely*, *nobody*, *neither*, etc.) y sus variantes informales de tipeo (*dont*, *didnt*, *wont*). Las contracciones negativas estándar se expanden antes de quitar la puntuación (`don't` → `do not`, `can't` → `can not`, `won't` → `will not`), evitando que expresiones como *"not good"* se reduzcan a *"good"*.
-* La columna `text` original se mantiene: los embeddings contextuales (Hugging Face) trabajan sobre el texto crudo.
+* **Limpieza de `text` → `cleaned_text`:** Conversión a minúsculas, sin HTML, sin dígitos numéricos, supresión de signos de puntuación extendidos, tokenización estructurada con NLTK, filtrado de stopwords y eliminación de tokens de un solo carácter, y lematización morfológica con WordNet.
+* **Tratamiento enriquecido de negaciones:** No solo se conservan `not`, `no` y `nor`, sino un vocabulario exhaustivo de términos que invierten o restringen polaridad (*never*, *without*, *hardly*, *barely*, *rarely*, *nobody*, *neither*, etc.) y sus variantes informales de tipeo (*dont*, *didnt*, *wont*). Las contracciones negativas estándar se expanden antes de quitar la puntuación (`don't` → `do not`, `can't` → `can not`, `won't` → `will not`), evitando que expresiones como *"not good"* se reduzcan a *"good"*.
+* La columna `text` original se mantiene intacta: los embeddings contextuales y tokenizadores de Hugging Face trabajan sobre el texto crudo.
 
 ### 1. Ejecución Enfoque Biclase (~168.000 reseñas)
 
@@ -118,7 +118,7 @@ poetry run python biclase/src/preprocess.py
 ```
 
 * **Salida:** `biclase/data/processed/amazon_reviews_clean.csv`.
-* **Etiquetas:** se descartan las reseñas neutras (`label == 2`) y se binariza en `sentiment` (`0` = negativa: labels 0-1; `1` = positiva: labels 3-4). Clases balanceadas (50% / 50%).
+* **Etiquetas:** Se descartan las reseñas neutras (`label == 2`) y se binariza en `sentiment` (`0` = negativa: labels 0-1; `1` = positiva: labels 3-4). Clases balanceadas (50% / 50%).
 
 ### 2. Ejecución Enfoque Triclase (~210.000 reseñas)
 
@@ -127,7 +127,7 @@ poetry run python triclase/src/preprocess.py
 ```
 
 * **Salida:** `triclase/data/processed/amazon_reviews_clean.csv`.
-* **Etiquetas:** se conservan todas las reseñas y se recodifican en 3 clases dentro de `sentiment` (`0` = negativa: labels 0-1; `1` = neutral: label 2; `2` = positiva: labels 3-4). Distribución 40% / 20% / 40%.
+* **Etiquetas:** Se conservan todas las reseñas y se recodifican en 3 clases dentro de `sentiment` (`0` = negativa: labels 0-1; `1` = neutral: label 2; `2` = positiva: labels 3-4). Distribución 40% / 20% / 40%.
 
 ---
 
@@ -135,8 +135,8 @@ poetry run python triclase/src/preprocess.py
 
 Cada flujo cuenta con su propio notebook de análisis exploratorio adaptado a la cantidad de categorías del experimento (balance de clases, distribución de longitud de reseñas, métricas léxicas del corpus y Top 20 palabras por polaridad):
 
-* **Notebook Biclase:** [`biclase/notebooks/01_eda.ipynb`](biclase/notebooks/01_eda.ipynb)
-* **Notebook Triclase:** [`triclase/notebooks/01_eda.ipynb`](triclase/notebooks/01_eda.ipynb)
+* **Notebook Biclase:** [biclase/notebooks/01\_eda.ipynb](https://www.google.com/search?q=biclase/notebooks/01_eda.ipynb)
+* **Notebook Triclase:** [triclase/notebooks/01\_eda.ipynb](https://www.google.com/search?q=triclase/notebooks/01_eda.ipynb)
 
 ---
 
@@ -154,8 +154,8 @@ poetry run python triclase/src/vectorize.py
 
 Requiere haber ejecutado previamente el `preprocess.py` correspondiente. La primera ejecución descarga los vectores GloVe (~820 MB, con soporte de reanudación automática ante cortes de red y extracción de `data/external/glove.6B.100d.txt` compartido por ambos flujos) y el tokenizador del modelo de Hugging Face.
 
-1. **Partición train/test** estratificada 80/20 (`random_state=42`). Los ids quedan en `<enfoque>/data/processed/train_test_split.csv` y las etiquetas en `<enfoque>/data/vectorized/y_train.npy` / `y_test.npy`, para que **todos los modelos de cada flujo usen la misma partición**.
-2. **Los vectorizadores se ajustan solo con train** (para no filtrar información del test) y se aplican a ambos conjuntos.
+1. **Partición train/test estratificada 80/20 (`random_state=42`):** Los IDs quedan registrados en `<enfoque>/data/processed/train_test_split.csv` y las etiquetas en `<enfoque>/data/vectorized/y_train.npy` e `y_test.npy`, asegurando que **todos los modelos de cada flujo compitan sobre exactamente la misma partición**.
+2. **Prevención de Data Leakage:** Los vectorizadores se ajustan únicamente con los datos de entrenamiento (`fit_transform` sobre train) y luego transforman el conjunto de prueba (`transform` sobre test).
 
 | Representación | Implementación | Entrada | Salida en `<enfoque>/data/vectorized/` |
 |---|---|---|---|
@@ -163,13 +163,13 @@ Requiere haber ejecutado previamente el `preprocess.py` correspondiente. La prim
 | TF-IDF unigrama | `TfidfVectorizer(min_df=5, ngram_range=(1,1))` | `cleaned_text` | `X_{train,test}_tfidf_unigram.npz` |
 | TF-IDF bigrama | `TfidfVectorizer(min_df=5, ngram_range=(1,2))` | `cleaned_text` | `X_{train,test}_tfidf_bigram.npz` |
 | Embeddings | GloVe 6B 100d, promedio de los vectores de las palabras de cada reseña | `cleaned_text` | `X_{train,test}_glove.npy` (densa, 100 dims) |
-| Pipeline HF (Biclase) | Tokenizador de `distilbert-base-uncased-finetuned-sst-2-english` | `text` (crudo) | Solo estadísticas; la inferencia se hace en la etapa de evaluación |
-| Pipeline HF (Triclase) | Tokenizador de `cardiffnlp/twitter-roberta-base-sentiment-latest` | `text` (crudo) | Solo estadísticas; la inferencia se hace en la etapa de evaluación |
+| Pipeline HF (Biclase) | Tokenizador de `distilbert-base-uncased-finetuned-sst-2-english` | `text` (crudo) | Estadísticas de tokens; inferencia en etapa de evaluación |
+| Pipeline HF (Triclase) | Tokenizador de `cardiffnlp/twitter-roberta-base-sentiment-latest` | `text` (crudo) | Estadísticas de tokens; inferencia en etapa de evaluación |
 
 Las matrices se guardan en `<enfoque>/data/vectorized/` y los vectorizadores ajustados en `<enfoque>/models/vectorizer_*.joblib` (para reutilizarlos en el banco adversarial y la app web). El **tamaño de vocabulario de cada representación** queda documentado en:
 
-* **Resumen Biclase:** [`biclase/reports/vectorization_summary.md`](biclase/reports/vectorization_summary.md)
-* **Resumen Triclase:** [`triclase/reports/vectorization_summary.md`](triclase/reports/vectorization_summary.md)
+* **Resumen Biclase:** [biclase/reports/vectorization\_summary.md](https://www.google.com/search?q=biclase/reports/vectorization_summary.md)
+* **Resumen Triclase:** [triclase/reports/vectorization\_summary.md](https://www.google.com/search?q=triclase/reports/vectorization_summary.md)
 
 Para cargar una representación desde un notebook o script de modelado:
 
@@ -185,6 +185,7 @@ X_test = sparse.load_npz(f"{ENFOQUE}/data/vectorized/X_test_tfidf_bigram.npz")
 y_train = np.load(f"{ENFOQUE}/data/vectorized/y_train.npy")
 y_test = np.load(f"{ENFOQUE}/data/vectorized/y_test.npy")
 ```
+
 ---
 
 ## 🤖 Entrenamiento, Comparación y Evaluación de Modelos
@@ -199,6 +200,7 @@ Para la entrega del **16/11/2026**, el objetivo principal consiste en entrenar y
 2. **Algoritmos sugeridos por la cátedra:** Naive Bayes (NB), Regresión Logística (LogReg), Random Forest (RF) y Perceptrón Multicapa (MLP). Cada equipo selecciona libremente la combinación de clasificadores para encontrar la solución más óptima.
 3. **Métricas de evaluación:** Accuracy, Precision, Recall, F1-Score (macro para triclase) y Matriz de Confusión.
 4. **Optimización e interpretación:** Ajuste de hiperparámetros (`GridSearchCV` / `RandomizedSearchCV`) sobre los modelos líderes, análisis de palabras relevantes y justificación explícita del modelo final seleccionado para la defensa ante Strata.
+
 ---
 
 ## 🗓️ Cronograma de Hitos del Proyecto
@@ -207,7 +209,7 @@ Para la entrega del **16/11/2026**, el objetivo principal consiste en entrenar y
 * **05/10/2026:** Word Embeddings y aporte de 2-3 oraciones al banco adversarial común del curso.
 * **19/10/2026:** Entrega parcial: Dataset vectorizado (BoW, TF-IDF unigrama/bigrama, embeddings, Hugging Face).
 * **16/11/2026:** Entrega parcial: Comparativa y evaluación de modelos sobre el test set adversarial.
-* **A definir:** Entrega final (informe integrador, repositorio actualizado, app web y defensa técnica con Strata).
+* **14/12/2026:** Entrega final: Informe integrador, repositorio actualizado, app web y defensa técnica con Strata.
 
 ---
 
