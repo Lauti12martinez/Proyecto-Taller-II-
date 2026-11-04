@@ -84,7 +84,7 @@ poetry install
 
 ## 📥 Ingesta de Datos (API de Amazon Reviews)
 
-El corpus crudo se descarga una única vez en la raíz del proyecto consultando la API provista por la cátedra (`https://amazon-reviews-api-g5ae.onrender.com`):
+El corpus crudo se descarga una única vez en la raíz del proyecto consultando el servidor de la API provista por la cátedra (`amazon-reviews-api-g5ae.onrender.com`):
 
 ```bash
 poetry run python src/extract_reviews.py
@@ -135,8 +135,8 @@ poetry run python triclase/src/preprocess.py
 
 Cada flujo cuenta con su propio notebook de análisis exploratorio adaptado a la cantidad de categorías del experimento (balance de clases, distribución de longitud de reseñas, métricas léxicas del corpus y Top 20 palabras por polaridad):
 
-* **Notebook Biclase:** [biclase/notebooks/01\_eda.ipynb](https://www.google.com/search?q=biclase/notebooks/01_eda.ipynb)
-* **Notebook Triclase:** [triclase/notebooks/01\_eda.ipynb](https://www.google.com/search?q=triclase/notebooks/01_eda.ipynb)
+* **Notebook Biclase:** `biclase/notebooks/01_eda.ipynb`.
+* **Notebook Triclase:** `triclase/notebooks/01_eda.ipynb`.
 
 ---
 
@@ -168,8 +168,8 @@ Requiere haber ejecutado previamente el `preprocess.py` correspondiente. La prim
 
 Las matrices se guardan en `<enfoque>/data/vectorized/` y los vectorizadores ajustados en `<enfoque>/models/vectorizer_*.joblib` (para reutilizarlos en el banco adversarial y la app web). El **tamaño de vocabulario de cada representación** queda documentado en:
 
-* **Resumen Biclase:** [biclase/reports/vectorization\_summary.md](https://www.google.com/search?q=biclase/reports/vectorization_summary.md)
-* **Resumen Triclase:** [triclase/reports/vectorization\_summary.md](https://www.google.com/search?q=triclase/reports/vectorization_summary.md)
+* **Resumen Biclase:** `biclase/reports/vectorization_summary.md`.
+* **Resumen Triclase:** `triclase/reports/vectorization_summary.md`.
 
 Para cargar una representación desde un notebook o script de modelado:
 
