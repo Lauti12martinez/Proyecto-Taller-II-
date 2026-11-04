@@ -108,7 +108,7 @@ poetry run python src/extract_reviews.py
 Ambos pipelines leen el archivo compartido `data/raw/amazon_reviews_raw.csv` y aplican exactamente las mismas reglas de normalización léxica para garantizar una comparativa justa:
 
 * **Limpieza de `text` → `cleaned_text`:** minúsculas, sin HTML, sin dígitos, sin puntuación, tokenización (NLTK), sin stopwords ni tokens de una letra, lematización (WordNet).
-* **Negaciones:** `not`, `no` y `nor` **se conservan** (se quitaron de las stopwords) y las contracciones negativas se expanden antes de quitar la puntuación (`don't` → `do not`, `can't` → `can not`, `won't` → `will not`). Sin esto, "not good" quedaba como "good", lo que invierte el sentimiento y rompe el banco adversarial.
+* **Negaciones:** No solo se conservan `not`, `no` y `nor`, sino un vocabulario exhaustivo de términos que invierten o restringen polaridad (*never*, *without*, *hardly*, *barely*, *rarely*, *nobody*, *neither*, etc.) y sus variantes informales de tipeo (*dont*, *didnt*, *wont*). Las contracciones negativas estándar se expanden antes de quitar la puntuación (`don't` → `do not`, `can't` → `can not`, `won't` → `will not`), evitando que expresiones como *"not good"* se reduzcan a *"good"*.
 * La columna `text` original se mantiene: los embeddings contextuales (Hugging Face) trabajan sobre el texto crudo.
 
 ### 1. Ejecución Enfoque Biclase (~168.000 reseñas)
@@ -185,7 +185,20 @@ X_test = sparse.load_npz(f"{ENFOQUE}/data/vectorized/X_test_tfidf_bigram.npz")
 y_train = np.load(f"{ENFOQUE}/data/vectorized/y_train.npy")
 y_test = np.load(f"{ENFOQUE}/data/vectorized/y_test.npy")
 ```
+---
 
+## 🤖 Entrenamiento, Comparación y Evaluación de Modelos
+
+Para la entrega del **16/11/2026**, el objetivo principal consiste en entrenar y comparar modelos de clasificación sobre las matrices estratificadas al 80/20 (`<enfoque>/data/vectorized/`) y evaluar su robustez ante el **test set adversarial** curado en conjunto por el curso:
+
+1. **Cuatro enfoques de representación a contrastar:**
+   - BoW / TF-IDF unigrama
+   - TF-IDF bigrama
+   - Embeddings pre-entrenados (GloVe 100d)
+   - Pipeline pre-entrenado de Hugging Face (SST-2 para biclase / RoBERTa para triclase)
+2. **Algoritmos sugeridos por la cátedra:** Naive Bayes (NB), Regresión Logística (LogReg), Random Forest (RF) y Perceptrón Multicapa (MLP). Cada equipo selecciona libremente la combinación de clasificadores para encontrar la solución más óptima.
+3. **Métricas de evaluación:** Accuracy, Precision, Recall, F1-Score (macro para triclase) y Matriz de Confusión.
+4. **Optimización e interpretación:** Ajuste de hiperparámetros (`GridSearchCV` / `RandomizedSearchCV`) sobre los modelos líderes, análisis de palabras relevantes y justificación explícita del modelo final seleccionado para la defensa ante Strata.
 ---
 
 ## 🗓️ Cronograma de Hitos del Proyecto
