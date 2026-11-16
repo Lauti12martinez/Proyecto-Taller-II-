@@ -99,7 +99,7 @@ poetry run python src/extract_reviews.py
 * **Resiliencia:** Incluye control de *Cold Start* en Render, reintentos automáticos ante cortes de red y paginación por lotes de 1.000 registros con barra de progreso interactiva (`tqdm`).
 
 > ⚠️ **Importante sobre el control de versiones (.gitignore):**  
-> El archivo `data/raw/amazon_reviews_raw.csv` supera los 100 MB y **no debe subirse a GitHub**. Ya está configurada la regla en el `.gitignore` para omitir `*.csv`. Cada integrante debe generar su copia local corriendo el script de extracción o solicitando el CSV por el almacenamiento compartido del grupo.
+> El archivo `data/raw/amazon_reviews_raw.csv`, los embeddings GloVe, las matrices vectorizadas y los modelos `.joblib` **no deben subirse al historial de GitHub**. El `.gitignore` omite esos artefactos pesados y únicamente habilita el versionado de archivos livianos compartidos por el equipo (`data/external/adversarial_test.csv`, `**/data/vectorized/y_pred_*.npy` y `**/reports/*.csv`). Para obtener los datasets base y modelos serializados, utilizar la sección de **GitHub Releases** descrita más abajo.
 
 ---
 
@@ -185,6 +185,25 @@ X_test = sparse.load_npz(f"{ENFOQUE}/data/vectorized/X_test_tfidf_bigram.npz")
 y_train = np.load(f"{ENFOQUE}/data/vectorized/y_train.npy")
 y_test = np.load(f"{ENFOQUE}/data/vectorized/y_test.npy")
 ```
+
+---
+
+## 📦 Distribución de Datasets y Modelos (GitHub Releases)
+
+Los artefactos pesados (dataset crudo, embeddings GloVe y modelos/vectorizadores `.joblib`) **no se suben al historial de Git**, sino como assets adjuntos en **GitHub Releases** del repositorio:
+
+* **Durante la semana:** se publican **pre-releases** por bloque de trabajo para compartir datasets base y modelos intermedios con el equipo.
+* **Viernes 20/11:** se publica el **Release consolidado en `main`** con todos los modelos finales listos para la entrega parcial del **23/11**.
+
+### Rutas exactas para descomprimir los archivos del Release
+
+Desde la raíz del repositorio (`Proyecto-Taller-II-/`), extraer cada archivo descargado del Release en su ruta correspondiente:
+
+| Asset del Release | Ruta exacta de destino en el repo | Uso |
+|---|---|---|
+| `amazon_reviews_raw.zip` | `data/raw/amazon_reviews_raw.csv` | Corpus crudo de entrada para `preprocess.py` |
+| `glove.6B.100d.zip` | `data/external/glove.6B.100d.txt` | Embeddings pre-entrenados compartidos por `vectorize.py` |
+| Modelos y vectorizadores (`*.joblib`) | `<enfoque>/models/*.joblib` (`triclase/models/*.joblib` y `biclase/models/*.joblib`) | Vectorizadores y clasificadores entrenados para inferencia y evaluación adversarial |
 
 ---
 
