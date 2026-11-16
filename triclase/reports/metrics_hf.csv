@@ -1,0 +1,2 @@
+model,representation,accuracy,precision_macro,recall_macro,f1_macro,cv_f1_mean,cv_f1_std
+cardiffnlp/twitter-roberta-base-sentiment-latest,hf_pipeline,0.699357,0.619355,0.6225,0.617316,,
