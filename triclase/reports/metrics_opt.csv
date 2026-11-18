@@ -1,0 +1,5 @@
+model,representation,accuracy,precision_macro,recall_macro,f1_macro,cv_f1_mean,cv_f1_std
+sgdopt,tfidfoptsgd,0.721214,0.661027,0.657321,0.656745,0.656626,0.004374
+logregopt,bowoptlogreg,0.694143,0.655354,0.653869,0.652973,0.655395,0.002419
+compnbopt,tfidfoptnb,0.696786,0.641155,0.640952,0.640829,0.639574,0.004132
+linearsvcopt,tfidfoptsvc,0.729762,0.662684,0.634881,0.617195,0.615615,0.00293

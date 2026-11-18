@@ -17,8 +17,12 @@ __pycache__/
 *.npy
 *.joblib
 *.zip
-data/external/
-**/data/vectorized/
+release_tmp/
+data/external/*
+!data/external/adversarial_test.csv
+**/data/vectorized/*
+!**/data/vectorized/y_pred_*.npy
+!**/reports/*.csv
 **/models/*
 
 # permitir archivos gitkeep para conservar la estructura de directorios.
