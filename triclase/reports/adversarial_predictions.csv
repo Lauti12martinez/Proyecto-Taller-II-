@@ -1,19 +1,19 @@
-text,sentiment,compnbopt_tfidfoptnb,linearsvc_bow,linearsvc_tfidf_bigram,linearsvc_tfidf_unigram,linearsvcopt_tfidfoptsvc,logreg_bow,logreg_tfidf_bigram,logreg_tfidf_unigram,logregopt_bowoptlogreg,nb_bow,nb_tfidf_bigram,nb_tfidf_unigram,sgd_bow,sgd_tfidf_bigram,sgd_tfidf_unigram,sgdopt_tfidfoptsgd,hf_transformer_raw_text,models_failed,total_models
-"This product is not bad at all, I actually like it.",2,0,0,2,0,2,0,2,0,2,0,0,0,0,0,0,1,2,12,17
-"I expected it to be terrible, but it works great.",2,2,2,2,2,2,2,2,2,2,0,2,0,2,2,2,2,0,3,17
-Never thought a cheap cable could last this long.,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,17,17
-"Not the best design, yet it gets the job done reliably.",2,1,2,1,2,2,2,2,2,1,2,2,2,2,2,2,1,2,4,17
-I could not be happier with this purchase.,2,2,2,2,2,2,2,2,2,2,2,2,2,0,0,0,2,2,3,17
-"The packaging was damaged, however the device itself is amazing.",2,0,2,1,2,1,2,1,2,1,0,0,0,2,2,2,1,2,9,17
-"It is okay, nothing special to write home about.",1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,17
-"The item works as described, neither great nor terrible.",1,0,0,0,0,0,0,0,0,1,0,0,0,0,2,2,2,2,16,17
-"Average quality for the price, just acceptable.",1,1,2,2,1,2,2,2,1,1,2,2,2,2,2,2,2,2,13,17
-It arrived on time and does what it is supposed to do.,1,2,0,2,0,2,0,2,0,2,0,2,0,0,0,0,2,2,17,17
-"Not terrible, not amazing either, just a standard charger.",1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,16,17
-I have mixed feelings about this keyboard after two weeks.,1,1,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,14,17
-"I wanted to love this headphones, but the sound is awful.",0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,0,0,2,17
-"Not good at all, stopped working after two days.",0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,17
-"Looks great in photos, unfortunately it feels super cheap.",0,1,0,0,0,1,0,1,0,1,1,2,0,0,2,0,1,2,9,17
-"I cannot recommend this to anyone, complete waste of money.",0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,17
-Hardly works and customer support never replied.,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,17
-"Great, another charger that breaks in less than a week.",0,0,2,0,0,0,2,0,0,1,0,0,0,2,2,0,0,0,5,17
+text,sentiment,compnbopt_tfidfoptnb,linearsvc_bow,linearsvc_tfidf_bigram,linearsvc_tfidf_unigram,linearsvcopt_tfidfoptsvc,logreg_bow,logreg_tfidf_bigram,logreg_tfidf_unigram,logregopt_bowoptlogreg,mlp_glove,nb_bow,nb_tfidf_bigram,nb_tfidf_unigram,rf_glove,sgd_bow,sgd_tfidf_bigram,sgd_tfidf_unigram,sgdopt_tfidfoptsgd,xgb_glove,hf_transformer_raw_text,models_failed,total_models
+"This product is not bad at all, I actually like it.",2,0,0,2,0,2,0,2,0,2,0,0,0,0,0,0,0,0,1,0,2,15,20
+"I expected it to be terrible, but it works great.",2,2,2,2,2,2,2,2,2,2,2,0,2,0,2,2,2,2,2,2,0,3,20
+Never thought a cheap cable could last this long.,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,20,20
+"Not the best design, yet it gets the job done reliably.",2,1,2,1,2,2,2,2,2,1,2,2,2,2,2,2,2,2,1,2,2,4,20
+I could not be happier with this purchase.,2,2,2,2,2,2,2,2,2,2,0,2,2,2,0,0,0,0,2,0,2,6,20
+"The packaging was damaged, however the device itself is amazing.",2,0,2,1,2,1,2,1,2,1,0,0,0,0,0,2,2,2,1,0,2,12,20
+"It is okay, nothing special to write home about.",1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,2,1,2,20
+"The item works as described, neither great nor terrible.",1,0,0,0,0,0,0,0,0,1,2,0,0,0,2,0,2,2,2,2,2,19,20
+"Average quality for the price, just acceptable.",1,1,2,2,1,2,2,2,1,1,1,2,2,2,2,2,2,2,2,2,2,15,20
+It arrived on time and does what it is supposed to do.,1,2,0,2,0,2,0,2,0,2,0,0,2,0,0,0,0,0,2,2,2,20,20
+"Not terrible, not amazing either, just a standard charger.",1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,19,20
+I have mixed feelings about this keyboard after two weeks.,1,1,0,1,0,0,0,0,0,1,1,0,0,0,2,0,0,0,0,1,0,15,20
+"I wanted to love this headphones, but the sound is awful.",0,0,0,0,0,0,0,0,0,0,2,0,0,0,2,0,2,2,0,2,0,5,20
+"Not good at all, stopped working after two days.",0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,20
+"Looks great in photos, unfortunately it feels super cheap.",0,1,0,0,0,1,0,1,0,1,2,1,2,0,2,0,2,0,1,2,2,12,20
+"I cannot recommend this to anyone, complete waste of money.",0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,20
+Hardly works and customer support never replied.,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,2,0,2,20
+"Great, another charger that breaks in less than a week.",0,0,2,0,0,0,2,0,0,1,2,0,0,0,0,2,2,0,0,2,0,7,20
