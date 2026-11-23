@@ -43,12 +43,20 @@ Proyecto-Taller-II-/
 │   │   └── vectorized/             # Matrices X_train/X_test e y_train/y_test triclase (ignorado en Git)
 │   ├── models/                     # Vectorizadores y modelos triclase serializados (ignorado en Git)
 │   ├── notebooks/
-│   │   └── 01_eda.ipynb            # Análisis exploratorio (EDA) para 3 clases
+│   │   ├── 01_eda.ipynb            # Análisis exploratorio (EDA) para 3 clases
+│   │   └── 02_evaluation.ipynb     # Comparativa F1, matrices de confusión y curvas de aprendizaje
 │   ├── reports/
-│   │   └── vectorization_summary.md # Tamaño de vocabulario y dimensiones (Triclase)
+│   │   ├── vectorization_summary.md # Tamaño de vocabulario y dimensiones (Triclase)
+│   │   ├── metrics_<bloque>.csv    # Métricas por bloque (linear, opt, hf, dense) con esquema común
+│   │   └── figures/                # Gráficos exportados por los scripts y el notebook
 │   └── src/
 │       ├── preprocess.py           # Limpieza y mapeo en 3 clases (incluye categoría neutral)
-│       └── vectorize.py            # Vectorización BoW, TF-IDF, GloVe y tokenizador HF (RoBERTa 3 clases)
+│       ├── vectorize.py            # Vectorización BoW, TF-IDF, GloVe y tokenizador HF (RoBERTa 3 clases)
+│       ├── train_linear.py         # NB, LogReg, LinearSVC y SGD sobre matrices dispersas
+│       ├── optimize_cv.py          # Optimización CV de los modelos clásicos
+│       ├── eval_hf.py              # Inferencia del pipeline de Hugging Face sobre el test
+│       ├── train_dense.py          # RF, XGBoost y MLP optimizados sobre embeddings GloVe
+│       └── evaluate_adversarial.py # Evaluación de todos los modelos sobre el banco adversarial
 ├── .gitignore                      # Exclusión de archivos pesados y entornos locales
 ├── pyproject.toml                  # Especificación de dependencias y configuración Poetry
 ├── poetry.lock                     # Registro determinista de versiones
@@ -219,6 +227,43 @@ Para la entrega del **16/11/2026**, el objetivo principal consiste en entrenar y
 2. **Algoritmos sugeridos por la cátedra:** Naive Bayes (NB), Regresión Logística (LogReg), Random Forest (RF) y Perceptrón Multicapa (MLP). Cada equipo selecciona libremente la combinación de clasificadores para encontrar la solución más óptima.
 3. **Métricas de evaluación:** Accuracy, Precision, Recall, F1-Score (macro para triclase) y Matriz de Confusión.
 4. **Optimización e interpretación:** Ajuste de hiperparámetros (`GridSearchCV` / `RandomizedSearchCV`) sobre los modelos líderes, análisis de palabras relevantes y justificación explícita del modelo final seleccionado para la defensa ante Strata.
+
+### Modelos densos sobre GloVe (Random Forest, XGBoost y MLP)
+
+```bash
+# Triclase (por defecto)
+poetry run python triclase/src/train_dense.py
+
+# Biclase, con el mismo script parametrizado
+poetry run python triclase/src/train_dense.py --enfoque biclase
+```
+
+Requiere `X_train_glove.npy` / `X_test_glove.npy` generados por `vectorize.py`. `MultinomialNB` se excluye porque los embeddings GloVe contienen valores negativos. Para cada algoritmo:
+
+1. **Búsqueda de hiperparámetros:** `RandomizedSearchCV` (`cv=5`, `scoring="f1_macro"`) sobre una submuestra estratificada del train (`--search-size`, 40.000 reseñas por defecto; `0` usa el train completo) para acotar el costo en CPU.
+2. **Curva de aprendizaje** con los mejores hiperparámetros sobre el train completo (5 tamaños × 5 folds). Su último punto es la validación cruzada de 5 folds que se informa como `cv_f1_mean` / `cv_f1_std`.
+3. **Ajuste final** sobre todo el train y evaluación en el 20% de test.
+
+| Salida | Contenido |
+|---|---|
+| `<enfoque>/models/model_{rf,xgb,mlp}_glove.joblib` | Modelos finales (el MLP incluye su `StandardScaler` como pipeline). `evaluate_adversarial.py` los detecta solo. |
+| `<enfoque>/reports/metrics_dense.csv` | Métricas con el esquema común del contrato de integración. |
+| `<enfoque>/reports/cv_search_dense.csv` | Historial de combinaciones probadas en la búsqueda. |
+| `<enfoque>/reports/learning_curve_dense.csv` | Datos de las curvas de aprendizaje. |
+| `<enfoque>/data/vectorized/y_pred_dense_{rf,xgb,mlp}.npy` | Predicciones sobre el test (para las matrices de confusión). |
+
+Opciones: `--models rf xgb mlp`, `--n-iter 10`, `--search-size 40000`, `--n-jobs -1`.
+
+### Notebook de evaluación consolidada
+
+`triclase/notebooks/02_evaluation.ipynb` lee dinámicamente todos los `metrics_*.csv`, `adversarial_results.csv`, `y_pred_*.npy` y `learning_curve_*.csv` del enfoque elegido (`ENFOQUE = "triclase"` o `"biclase"` en la primera celda) y genera en `<enfoque>/reports/figures/`:
+
+* Comparativa de **F1 macro** de todos los modelos y dispersión **CV vs test** (estabilidad).
+* **Test vs banco adversarial** (robustez ante negaciones e inversiones).
+* **Matrices de confusión** normalizadas del mejor modelo de cada bloque. Si un bloque no guardó sus predicciones, se calculan con su `.joblib` y se cachean como `y_pred_*.npy`.
+* **Curvas de aprendizaje** de cada `learning_curve_*.csv` (y la del líder lineal `logreg + tfidf_bigram`, calculada y cacheada la primera vez).
+
+Un bloque nuevo que respete el contrato de nombres aparece en el notebook sin modificar código.
 
 ---
 

@@ -1,0 +1,6 @@
+model,representation,train_size,train_f1_mean,train_f1_std,val_f1_mean,val_f1_std
+logreg,tfidf_bigram,13439,0.835907,0.0062,0.580146,0.002111
+logreg,tfidf_bigram,43679,0.797868,0.002867,0.614909,0.004576
+logreg,tfidf_bigram,73918,0.782837,0.001676,0.628369,0.005169
+logreg,tfidf_bigram,104157,0.77328,0.002234,0.633607,0.003717
+logreg,tfidf_bigram,134397,0.76338,0.001946,0.636466,0.003168

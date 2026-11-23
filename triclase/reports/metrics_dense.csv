@@ -1,0 +1,4 @@
+model,representation,accuracy,precision_macro,recall_macro,f1_macro,cv_f1_mean,cv_f1_std
+xgb,glove,0.653762,0.573299,0.569147,0.553917,0.554055,0.002073
+mlp,glove,0.658048,0.578815,0.562917,0.534145,0.543816,0.002911
+rf,glove,0.626238,0.548544,0.531091,0.495486,0.49666,0.002422
