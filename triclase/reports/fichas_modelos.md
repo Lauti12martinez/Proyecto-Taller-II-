@@ -3,7 +3,7 @@
 ## 1. Fichas técnicas de los algoritmos
 
 ### Naive Bayes (MultinomialNB / ComplementNB)
-Fue el primer modelo que probamos y lo usamos como punto de partida para comparar al resto. Trabaja con el teorema de Bayes: mira las palabras de cada reseña y calcula qué tan probable es que pertenezca a cada clase. Para simplificar la cuenta supone que las palabras no dependen unas de otras, y de ahí viene lo de "ingenuo". Gracias a eso entrena muy rápido, aunque pierde cosas importantes: frente a un *"not bad"* ve un "not" y un "bad" por separado, cuando juntos quieren decir algo positivo. En la versión base usamos MultinomialNB, y para optimizar pasamos a ComplementNB, una variante que se lleva mejor con clases de distinto tamaño, como pasa con nuestra clase neutral.
+Fue el primer modelo que probamos y lo usamos como punto de partida para comparar al resto. Trabaja con el teorema de Bayes: mira las palabras de cada reseña y calcula qué tan probable es que pertenezca a cada clase. Para simplificar la cuenta supone que las palabras no dependen unas de otras, y de ahí viene lo de "ingenuo". Gracias a eso entrena muy rápido, aunque pierde cosas importantes: frente a un *"not bad"* ve un "not" y un "bad" por separado, cuando juntos quieren decir algo positivo. En la versión base usamos MultinomialNB, y para optimizar pasamos a ComplementNB, una variante que se lleva mejor con clases de distinto tamaño, como pasa con nuestra clase neutral. Ninguna de las dos variantes se probó sobre GloVe porque exigen valores no negativos y esos embeddings incluyen coordenadas negativas.
 
 ### Regresión Logística (LogReg)
 La Regresión Logística le asigna un peso a cada palabra del vocabulario según cuánto la acerca a cada sentimiento, suma esos pesos y los transforma en probabilidades para las tres clases. Con el parámetro C se regula cuánto se "frena" al modelo para que no se aprenda de memoria los datos de entrenamiento. Lo que más nos gustó es que se puede interpretar: revisando los pesos se ve qué palabras empujan hacia cada clase, que es justo el análisis de palabras relevantes que pide la consigna. Su límite es el de cualquier modelo lineal: no entiende cómo se combinan las palabras, salvo lo poco que le aportan los bigramas.
@@ -34,10 +34,10 @@ Igual preferimos optimizar varios modelos y ver hasta dónde podía llegar cada 
 
 | Modelo | Mejor F1-macro base | Puesto base (de 12) | F1-macro optimizado | Mejora |
 |---|---|---|---|---|
-| SGD | 0,581 (BoW) | 8.º | 0,657 | +7,6 pts |
-| Naive Bayes → ComplementNB | 0,613 (BoW) | 4.º | 0,641 | +2,8 pts |
-| Regresión Logística | 0,640 (TF-IDF bigrama) | 1.º | 0,653 | +1,3 pts |
-| LinearSVC | 0,628 (TF-IDF bigrama) | 2.º | 0,617 | −1,1 pts |
+| SGD | 0,581 (BoW) | 8.º | 0,657 (TF-IDF bigrama) | +7,6 pts |
+| Naive Bayes → ComplementNB | 0,613 (BoW) | 4.º | 0,641 (TF-IDF bigrama) | +2,8 pts |
+| Regresión Logística | 0,640 (TF-IDF bigrama) | 1.º | 0,653 (BoW bigrama) | +1,3 pts |
+| LinearSVC | 0,628 (TF-IDF bigrama) | 2.º | 0,617 (TF-IDF bigrama) | −1,1 pts |
 
 SGD había quedado octavo de doce, así que con el criterio original no lo hubiéramos tocado. Una vez optimizado, fue el que más creció y terminó primero. La Regresión Logística, que arrancaba arriba, subió apenas un punto, y LinearSVC hasta empeoró.
 
@@ -46,9 +46,9 @@ La explicación está en que SGD es el que más margen de ajuste tiene. En la b�
 - No compensaba la clase neutral. Sin `class_weight="balanced"` el modelo se inclinaba hacia las clases más grandes. Todas las mejores configuraciones usan balanceo; la mejor sin balanceo llega a 0,597, unos 6 puntos menos.
 - Estaba demasiado regularizado. Con el α por defecto (1e-4) el modelo quedaba tan frenado que no llegaba a aprovechar el vocabulario. El mejor valor resultó diez veces más chico (1e-5).
 
-Esperábamos que elasticnet fuera la clave, pero la configuración ganadora terminó usando L2, con elasticnet y L1 bastante cerca (0,637 y 0,636). Más que un tipo de regularización en particular, lo que hizo la diferencia fue poder probar muchas combinaciones hasta dar con la adecuada.
+Esperábamos que elasticnet fuera la clave, pero la configuración ganadora terminó usando L2, con elasticnet y L1 bastante cerca (0,637 y 0,636). En esa diferencia también pesó el muestreo aleatorio de la búsqueda (`RandomizedSearchCV` con 12 combinaciones): la corrida ganadora con L2 salió sorteada con bigramas, mientras que las mejores con elasticnet y L1 cayeron con unigramas.
 
-Del resto también sacamos algo. Naive Bayes ganó casi 3 puntos solo con pasar a la variante Complement y ajustar el suavizado. La Regresión Logística ya partía bien y tenía menos para mejorar. LinearSVC nos mostró que optimizar no siempre suma: el calibrador que le agregamos para obtener probabilidades le hizo perder rendimiento.
+Del resto también sacamos algo. Naive Bayes ganó casi 3 puntos solo con pasar a la variante Complement y ajustar el suavizado. La Regresión Logística ya partía bien y tenía menos para mejorar, aunque al ajustar en conjunto el pipeline terminó rindiendo mejor con BoW en bigramas que con TF-IDF. LinearSVC nos mostró que optimizar no siempre suma: aunque el clasificador interno usaba balanceo de clases, el calibrador isotónico (`CalibratedClassifierCV`) reescaló las probabilidades hacia la proporción real del dataset (40/20/40) y tiró abajo la detección de la clase neutral.
 
 ## 3. Por qué el F1-macro es la métrica rectora en triclase
 
