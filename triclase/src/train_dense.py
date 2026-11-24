@@ -85,7 +85,7 @@ def search_best_params(estimator, params, x_train, y_train, cv_splitter, args):
 def main():
     parser = argparse.ArgumentParser(description="Entrena y optimiza RF, XGBoost y MLP sobre embeddings GloVe.")
     parser.add_argument("--enfoque", dest="approach", choices=["triclase", "biclase"], default="triclase")
-    parser.add_argument("--models", nargs="+", default=["rf", "xgb", "mlp"])
+    parser.add_argument("--models", nargs="+", choices=["rf", "xgb", "mlp"], default=["rf", "xgb", "mlp"])
     parser.add_argument("--n-iter", type=int, default=10, help="Combinaciones evaluadas por RandomizedSearchCV.")
     parser.add_argument("--search-size", type=int, default=40000, help="Resenas de train usadas en la busqueda (0 = todas).")
     parser.add_argument("--n-jobs", type=int, default=-1)

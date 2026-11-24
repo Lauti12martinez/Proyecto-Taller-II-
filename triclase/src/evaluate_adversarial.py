@@ -132,19 +132,19 @@ def parse_model_filename(model_path):
     return algorithm, representation
 
 
-def map_hf_label(raw_label, approach):
-    # Normalizacion de etiquetas de salida de Hugging Face al esquema numerico del proyecto.
-    label_upper = str(raw_label).strip().upper()
-    if approach == "triclase":
-        if "NEG" in label_upper or label_upper == "LABEL_0":
-            return 0
-        if "NEU" in label_upper or label_upper == "LABEL_1":
-            return 1
-        return 2
+LABEL_TO_ID = {
+    "triclase": {"negative": 0, "label_0": 0, "neutral": 1, "label_1": 1, "positive": 2, "label_2": 2},
+    "biclase": {"negative": 0, "label_0": 0, "positive": 1, "label_1": 1},
+}
 
-    if "NEG" in label_upper or label_upper == "LABEL_0":
-        return 0
-    return 1
+
+def map_hf_label(raw_label, approach):
+    # Normalizacion y validacion de etiquetas de Hugging Face al esquema numerico del proyecto.
+    key = str(raw_label).strip().lower()
+    mapping = LABEL_TO_ID[approach]
+    if key not in mapping:
+        raise ValueError(f"Etiqueta inesperada de Hugging Face para {approach}: {raw_label}")
+    return mapping[key]
 
 
 def predict_huggingface(raw_texts, approach):
@@ -247,16 +247,17 @@ def main():
 
     # Evaluacion del modelo preentrenado de Hugging Face sobre las oraciones crudas.
     try:
+        hf_model_name = HF_MODELS[approach]
         y_pred_hf = predict_huggingface(raw_texts, approach)
         hf_scores = compute_metrics(y_true, y_pred_hf)
         summary_records.append(
             {
-                "model": "hf_transformer",
-                "representation": "raw_text",
+                "model": hf_model_name,
+                "representation": "hf_pipeline",
                 **hf_scores,
             }
         )
-        predictions_df["hf_transformer_raw_text"] = y_pred_hf
+        predictions_df[f"{hf_model_name.split('/')[-1]}_hf_pipeline"] = y_pred_hf
     except Exception as err:
         print(f"[Aviso] No se pudo ejecutar Hugging Face en esta corrida ({err}).")
 

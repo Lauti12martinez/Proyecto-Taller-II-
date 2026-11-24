@@ -136,8 +136,9 @@ def save_plots(approach, best_model, best_pred, y_test, metrics_df, class_names,
     )
     hf_csv = reports_dir / "metrics_hf.csv"
     if hf_csv.exists():
-        hf_label = "hf_roberta" if approach == "triclase" else "hf_distilbert"
-        comp_df.loc[hf_label] = [np.nan, float(pd.read_csv(hf_csv)["f1_macro"].iloc[0])]
+        hf_df = pd.read_csv(hf_csv)
+        hf_label = str(hf_df["model"].iloc[0]).split("/")[-1]
+        comp_df.loc[hf_label] = [np.nan, float(hf_df["f1_macro"].iloc[0])]
 
     ax = comp_df.plot(kind="bar", figsize=(9, 5), rot=0, ylim=(0, 1.05), color=["#60A5FA", "#FDBA74"])
     for container in ax.containers:
@@ -159,7 +160,7 @@ def main():
     parser.add_argument("--enfoque", dest="approach", choices=["triclase", "biclase"], default="triclase")
     parser.add_argument("--n-iter", type=int, default=12)
     parser.add_argument("--n-jobs", type=int, default=4)
-    parser.add_argument("--models", nargs="+", default=["logregopt", "linearsvcopt", "sgdopt", "compnbopt"])
+    parser.add_argument("--models", nargs="+", choices=["logregopt", "linearsvcopt", "sgdopt", "compnbopt"], default=["logregopt", "linearsvcopt", "sgdopt", "compnbopt"])
     parser.add_argument("--only-plots", action="store_true")
     args = parser.parse_args()
 
